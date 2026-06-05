@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATG電子 VIP預測系統 | 尊榮驗證版</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* --- 尊榮 VIP 黑金奢華配色 --- */
+:root {
+  --primary: #FFD700;    /* 奢華金 */
+  --secondary: #ffaa00;  /* 財富橘 */
+  --danger: #ff3b3b;     /* 好運紅 */
+  --success: #00e676;    /* 狀態綠 */
+  --vip-gold: #E8B923;
+  --bg-dark: #0a0505;
+  --card-bg: rgba(20, 10, 15, 0.85);
+}
+
+body {
+  background: linear-gradient(rgba(10, 5, 5, 0.9), rgba(0, 0, 0, 0.95)),
+              url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop') center/cover fixed;
+  color: #fdf5e6;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.marquee-container {
+  background: rgba(255, 215, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.5);
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--primary);
+  overflow: hidden;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.marquee-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translate3d(50%, 0, 0); }
+  100% { transform: translate3d(-100%, 0, 0); }
+}
+
+.marquee-content span {
+  margin-right: 50px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 5px 15px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+h1 {
+  color: #ffffff;
+  font-size: 1.6rem;
+  margin: 30px 0 10px 0;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.atg-brand {
+  background: linear-gradient(to bottom, #FFF3E0, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  font-weight: 900;
+}
+
+.badges { display: flex; gap: 10px; justify-content: center; }
+
+.badge-vip {
+  display: inline-block;
+  background: linear-gradient(135deg, #FFDF00, #B8860B);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge-count {
+  display: inline-block;
+  background: linear-gradient(135deg, #00c853, #009624);
+  color: white;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(0, 200, 83, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+#online {
+  font-size: 14px;
+  color: #d4af37;
+  margin-bottom: 25px;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+  letter-spacing: 1px;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-top: 2px solid rgba(255, 215, 0, 0.6);
+  border-radius: 20px;
+  padding: 30px;
+  margin: 20px auto;
+  max-width: 600px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(255, 215, 0, 0.05);
+  transition: all 0.4s ease;
+  position: relative;
+  z-index: 10;
+}
+
+input {
+  background: rgba(0, 0, 0, 0.8);
+  color: #FFD700;
+  padding: 14px 20px;
+  margin: 12px auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  width: calc(100% - 70px);
+  font-size: 16px;
+  transition: 0.3s;
+  font-weight: bold;
+  display: block;
+}
+
+input::placeholder { color: #666; font-weight: normal; }
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+button {
+  background: linear-gradient(135deg, #FFDF00, #DAA520, #B8860B);
+  color: #111;
+  padding: 14px 30px;
+  margin: 15px 10px;
+  border-radius: 30px;
+  border: 1px solid #FFED4A;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(218, 165, 32, 0.5);
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(218, 165, 32, 0.8);
+  background: linear-gradient(135deg, #FFF05A, #E8B923, #C99718);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #444, #222);
+  color: #FFD700;
+  border: 1px solid #555;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+}
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #555, #333);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8);
+}
+
+.game-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 25px; }
+
+.game-card {
+  flex: 1 1 130px;
+  max-width: 150px;
+  background: rgba(10, 5, 5, 0.9);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+}
+
+.game-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  border-color: var(--primary);
+  box-shadow: 0 12px 30px rgba(255, 215, 0, 0.4);
+}
+
+.game-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.game-card:hover img {
+  transform: scale(1.08);
+}
+
+.game-card .game-name {
+  padding: 10px 0;
+  font-weight: 900;
+  color: #fff;
+  font-size: 15px;
+  background: linear-gradient(to top, rgba(0,0,0,1), rgba(20,5,5,0.9));
+  border-top: 1px solid rgba(255, 215, 0, 0.4);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 1px;
+}
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+
+.roomCard {
+  background: rgba(20, 5, 5, 0.9);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 16px;
+  padding: 18px 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+.roomCard:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary);
+  background: rgba(255, 215, 0, 0.12);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+.best {
+  border: 1px solid var(--danger);
+  background: linear-gradient(180deg, rgba(30, 5, 5, 0.95), rgba(255, 59, 59, 0.2));
+  box-shadow: 0 0 15px rgba(255, 59, 59, 0.2);
+}
+
+.rate-num {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--primary);
+  margin: 8px 0;
+  text-shadow: 0 0 10px rgba(255,215,0,0.4);
+}
+.best .rate-num {
+  color: var(--danger);
+  text-shadow: 0 0 10px rgba(255,59,59,0.6);
+}
+
+.room-meta { font-size: 12px; color: #b0a090; margin-top: 4px; }
+
+.loading-box { padding: 40px 0; }
+.scanner {
+  width: 80%; margin: 0 auto; height: 2px; background: var(--primary);
+  box-shadow: 0 0 20px var(--primary); animation: scan 1.5s infinite ease-in-out;
+}
+@keyframes scan {
+  0% { transform: translateY(-15px); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(35px); opacity: 0; }
+}
+.loading-text { font-weight: bold; color: var(--primary); letter-spacing: 2px; animation: blink 1.5s infinite; margin-top: 25px; }
+@keyframes blink { 50% { opacity: 0.5; } }
+
+.strategy-box { background: rgba(0,0,0,0.8); border-radius: 12px; padding: 15px; margin-top: 20px; border: 1px solid rgba(255,215,0,0.2); }
+.strategy { text-align: left; margin: 12px 0; padding: 12px 15px; background: rgba(255,215,0,0.05); border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; font-size: 14.5px; line-height: 1.6; color: #eee; }
+.strategy.vip-alert { border-left-color: var(--vip-gold); background: rgba(232, 185, 35, 0.1); border-top: 1px dashed rgba(232, 185, 35, 0.3); border-bottom: 1px dashed rgba(232, 185, 35, 0.3); color: #FFF; font-weight: bold; }
+
+.btn-line-upgrade {
+  background: linear-gradient(135deg, #00c300, #009900);
+  border-color: #00e600;
+  color: #fff;
+  width: 80%;
+  font-size: 18px;
+  padding: 16px;
+  box-shadow: 0 0 20px rgba(0, 195, 0, 0.5);
+  animation: pulse-line 1.5s infinite alternate;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+}
+@keyframes pulse-line {
+  0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 195, 0, 0.4); }
+  100% { transform: scale(1.03); box-shadow: 0 0 25px rgba(0, 195, 0, 0.8); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="marquee-container">
+  <div class="marquee-content" id="marqueeText">
+    <span>系統安全防護機制運作中...</span>
+  </div>
+</div>
+
+<h1>
+  <span>🎰 <span class="atg-brand">ATG電子</span> VIP預測系統</span>
+  <div class="badges">
+    <span class="badge-vip">👑 VIP 專業版</span>
+    <span class="badge-count" id="trialCounterUI">剩餘分析: 讀取中</span>
+  </div>
+</h1>
+<p id="online">全球密鑰封包大數據伺服器連線中...</p>
+
+<div id="loginArea">
+  <div class="card">
+    <h2 style="color: var(--primary); margin-top: 0;">VIP 會員身份驗證</h2>
+    <p style="font-size: 13px; color: #b0a090; margin-bottom: 20px;">請輸入您的雲端 VIP 帳號與密碼以同步數據</p>
+    <input id="username" type="text" placeholder="請輸入會員帳號 / 信箱">
+    <input id="password" type="password" placeholder="請輸入密碼">
+    <button onclick="handleVipLogin()" style="width: calc(100% - 50px);">驗證並啟動數據引擎</button>
+  </div>
+</div>
+
+<div id="games"></div>
+<div id="gamePage"></div>
+
+<script>
+// ===================================================
+// ⚙️ 👇 專屬 Supabase 金鑰 👇
+// ===================================================
+const SUPABASE_URL = "https://igefpbxlchcevyqirwiw.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_HyDUEy0WqtjMns_YlV-z6w_8hfu9zqY";
+// ===================================================
+
+// 🎯 1. 遊戲列表
+const games = [
+  { name: "戰神賽特2", img: "zh-tw.jpg" },
+  { name: "巴風特", img: "game_icon.webp" },
+  { name: "戰神賽特", img: "game_icon (1).webp" },
+  { name: "赤三國", img: "赤三國gameLogo.webp" }
+];
+
+// 💾 2. 核心變數設定
+let currentPlayer = "未登入會員";
+let currentGame = "";
+let currentTrialsLeft = 5; 
+const MAX_TRIAL = 5; 
+
+// 🛡️ 初始化資料庫連線
+let _db = null;
+try {
+  if (SUPABASE_URL.startsWith("https://")) {
+    _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.error("⚠️ 資料庫初始化失敗:", e);
+}
+
+// 🎯 生成本地端追蹤影子 ID
+let deviceId = localStorage.getItem('atg_device_id');
+if (!deviceId) {
+  deviceId = 'vip_' + Math.random().toString(36).substring(2, 15);
+  localStorage.setItem('atg_device_id', deviceId);
+}
+
+function updateTrialCounterUI() {
+  let counterEl = document.getElementById('trialCounterUI');
+  if (currentTrialsLeft > 0) {
+    counterEl.innerText = `剩餘分析: ${currentTrialsLeft} 次`;
+    counterEl.style.background = 'linear-gradient(135deg, #00c853, #009624)';
+  } else {
+    counterEl.innerText = `分析次數已耗盡`;
+    counterEl.style.background = 'linear-gradient(135deg, #ff3b3b, #d32f2f)';
+    counterEl.style.boxShadow = '0 0 15px rgba(255, 59, 59, 0.4)';
+  }
+}
+
+// ⚡ 數據同步到雲端後台 (保持紀錄至 atg_logs)
+async function pushLogToCloud(actionType, roomNo = "", roomRate = 0) {
+  if(!_db) return;
+  try {
+    await _db.from('atg_logs').insert([
+      {
+        player_name: currentPlayer,
+        balance: 0, 
+        game_name: currentGame || actionType,
+        room_no: roomNo || actionType,
+        rate: roomRate,
+        device_id: deviceId
+      }
+    ]);
+  } catch (err) {}
+}
+
+function updateMarquee() {
+  let content = "";
+  for(let i=0; i<5; i++) {
+    const name = Math.random().toString(36).substring(2,6).toUpperCase();
+    const game = games[Math.floor(Math.random()*games.length)].name;
+    const score = Math.floor(Math.random()*2500) + 500;
+    content += `<span>🎊 【VIP快報】會員 ${name} 透過精準特徵碼在【${game}】贏得 ${score}x 爆發大獎！</span>`;
+  }
+  document.getElementById("marqueeText").innerHTML = content;
+}
+updateMarquee();
+setInterval(updateMarquee, 12000);
+
+function updateOnlineCount() {
+  const baseCount = 580;
+  const randomOffset = Math.floor(Math.random() * 50) - 25;
+  document.getElementById("online").innerText = "📡 VIP 頻道當前在線人數：" + (baseCount + randomOffset) + " 人";
+}
+updateOnlineCount();
+setInterval(updateOnlineCount, 3000);
+
+// 🔒 處理 Supabase 會員登入驗證
+async function handleVipLogin() {
+  let userInp = document.getElementById("username").value.trim();
+  let passInp = document.getElementById("password").value.trim();
+  
+  if(!userInp || !passInp) {
+    return alert("請完整輸入帳號與密碼");
+  }
+
+  document.getElementById("loginArea").innerHTML = `
+    <div class='card loading-box'>
+      <div class='scanner'></div>
+      <p class='loading-text'>⏳ 正在連接 Supabase 進行 VIP 安全驗證...</p>
+    </div>
+  `;
+
+  if(!_db) {
+    alert("⚠️ 雲端資料庫未正常載入，將啟用本地沙盒測試。");
+    currentPlayer = userInp;
+    currentTrialsLeft = 5;
+    updateTrialCounterUI();
+    showStrategy();
+    return;
+  }
+
+  try {
+    // 驗證模組 A: 優先嘗試 Supabase Auth 標準電子信箱/密碼登入
+    const { data: authData, error: authError } = await _db.auth.signInWithPassword({
+      email: userInp,
+      password: passInp,
+    });
+
+    if (!authError && authData.user) {
+      currentPlayer = authData.user.email;
+      // 已修改為 atg_VIP_users
+      const { data: prof } = await _db.from('atg_VIP_users').select('trials_left').eq('device_id', authData.user.id).maybeSingle();
+      currentTrialsLeft = prof ? prof.trials_left : 5;
+      updateTrialCounterUI();
+      showStrategy();
+    } else {
+      // 驗證模組 B: 自訂資料表 (atg_VIP_users) 比對明文帳密
+      const { data: customUser, error: customError } = await _db
+        .from('atg_VIP_users')
+        .select('*')
+        .eq('username', userInp)
+        .eq('password', passInp)
+        .maybeSingle();
+
+      if (customUser) {
+        currentPlayer = customUser.username || userInp;
+        currentTrialsLeft = customUser.trials_left !== undefined ? customUser.trials_left : 5;
+        updateTrialCounterUI();
+        showStrategy();
+      } else {
+        alert("❌ 驗證失敗：帳號或密碼不正確，請重新檢查");
+        location.reload();
+      }
+    }
+  } catch(e) {
+    console.error(e);
+    alert("連結 Supabase 發生異常錯誤");
+    location.reload();
+  }
+}
+
+function showStrategy(){
+  let advice = "👑 VIP 提示：已成功綁定雲端代碼。系統已切換至專屬高階通道，實時攔截伺服器分配之高回報波動數據。";
+
+  document.getElementById("loginArea").innerHTML = `
+    <div class='card'>
+      <h2>✅ 參數與 VIP 權限驗證成功</h2>
+      <p style="color:var(--success); font-weight: bold; font-size: 18px;">👑 歡迎回來：${currentPlayer}</p>
+      <div class="strategy" style="border-left-color:var(--success);">
+        ${advice} <br><br>
+        <span style="font-size:12px; color:var(--success);">* 本日剩餘高階解析次數已載入完成（上限 5 次）。</span>
+      </div>
+      <button onclick="loadGameList()" style="width:80%; margin-top:20px;">進入 VIP 專屬大廳</button>
+    </div>
+  `;
+  pushLogToCloud("VIP會員登入成功");
+}
+
+function loadGameList(){
+  document.getElementById("loginArea").innerHTML = "";
+  document.getElementById("gamePage").innerHTML = ""; 
+  
+  const gameCards = games.map(g => `
+    <div class="game-card" onclick="openGame('${g.name}')">
+      <div style="width: 100%; overflow: hidden;">
+        <img src="${g.img}" alt="${g.name}">
+      </div>
+      <div class="game-name">${g.name}</div>
+    </div>
+  `).join("");
+
+  document.getElementById("games").innerHTML = `
+    <div class='card'>
+      <div style="display:flex; justify-content:center; align-items:flex-start;">
+        <h2 style="margin-top:0;">🎯 選擇監控對象</h2>
+      </div>
+      <p style="font-size:13.5px; color:#b0a090; text-align:center; margin-top:5px;">
+        VIP 專業版提供精準波動度、爆分率與獨家即時特徵碼。
+      </p>
+      <div class="game-grid">${gameCards}</div>
+    </div>
+  `;
+}
+
+function generateRooms(){
+  let rooms = [];
+  const statusPool = ["活躍中", "蓄勢期", "平穩期", "觀察期"];
+  let selectedRooms = [];
+  while(selectedRooms.length < 6) {
+    let rNum = Math.floor(Math.random() * 273) + 1;
+    let formatted = String(rNum).padStart(3, '0');
+    if(!selectedRooms.includes(formatted)) selectedRooms.push(formatted);
+  }
+  for(let i = 0; i < 6; i++){ 
+    const rate = 30 + Math.floor(Math.random() * 60); 
+    const volatility = rate > 75 ? "極高波動" : "平穩微波";
+    const status = rate > 80 ? "🔥 爆發信號鎖定" : statusPool[i % statusPool.length];
+    rooms.push({ room: selectedRooms[i], rate, volatility, status });
+  }
+  rooms.sort((a, b) => b.rate - a.rate);
+  let html = "<div class='grid'>";
+  rooms.forEach((r, i) => {
+    const isBest = (i === 0);
+    html += `
+      <div class='roomCard ${isBest ? 'best' : ''}' onclick="openRoom('${r.room}', ${r.rate})">
+        <div style="font-size:13px; color:#b0a090; letter-spacing:1px;">no.${r.room}</div>
+        <div class="rate-num">${r.rate}%</div>
+        <div style="font-size:12px; font-weight:bold; color:${isBest?'var(--danger)':'var(--secondary)'}">${r.status}</div>
+        <div class="room-meta">波動狀況: ${r.volatility}</div>
+      </div>
+    `;
+  });
+  return html + "</div>";
+}
+
+function openGame(name){
+  currentGame = name;
+  document.getElementById("games").innerHTML = "";
+  document.getElementById("gamePage").innerHTML = `
+    <div class='card loading-box'>
+      <div class='scanner' style="background:var(--secondary); box-shadow:0 0 15px var(--secondary);"></div>
+      <p class='loading-text' style="color:var(--secondary)">正在攔截【${name}】後台即時賠率數據...</p>
+    </div>
+  `;
+  setTimeout(() => {
+    document.getElementById("gamePage").innerHTML = `
+      <div class='card' style="max-width: 650px;">
+        <h2 style="margin-top:0;">🎰 ${name} 監控房號列表</h2>
+        <p style="font-size:13px; color:var(--success); margin-top:-5px;">👑 單一房間深度解析將消耗 1 次額度</p>
+        ${generateRooms()}
+        <br style="clear:both;">
+        <button class="btn-secondary" onclick="openGame('${name}')">🔄 強制更新數據</button>
+        <button onclick="loadGameList()">⬅ 返回大廳</button>
+      </div>
+    `;
+  }, 1200);
+}
+
+// 🎯 ATG 四大遊戲專屬真實打法策略庫
+const strategyPools = {
+  "戰神賽特2": {
+    high: [
+      "🔥 攻略特報：盤面連續兩轉出現「黃金聖甲蟲」，且帶有50倍以上神石，這是準備開出大爆發的強烈訊號，建議直接買入免遊！",
+      "🔥 實戰測試：消除頻率極高，即使是低賠率圖形也能輕鬆連消4次以上，代表機台進入極度活躍的「吐分期」，請加大注碼。",
+      "🔥 爆發預測：此時段高賠率圖騰與倍數石完美結合。建議設定50轉自動，抓取盤面自然爆發的連線機會。",
+      "🔥 買關建議：高勝率特徵浮現！可嘗試「階梯式加注法」，每10轉未開大獎即往上加注一個籌碼檔位。"
+    ],
+    mid: [
+      "⚖️ 過渡期防守：盤面常有3個聖甲蟲聽牌，但最後一顆遲遲不落。建議改用手動點擊30轉，嘗試打破亂數週期。",
+      "⚖️ 震盪觀察：倍數球大多落在2x~10x之間，屬於溫水煮青蛙的「過渡期」，請維持最低底注防守，不要輕易買免遊。",
+      "⚖️ 實戰心法：盤面時而大連線、時而連續空轉。建議採用手動與自動交替打亂系統亂數，耐心等待高倍數神石降臨。"
+    ],
+    low: [
+      "❄️ 冰凍期警告：盤面連最基本的8個相同符號都湊不齊，且連續50轉沒有掉落任何倍數球，機台正在瘋狂吃分，請立刻換房！",
+      "❄️ 買關地雷：轉動時畫面異常乾淨，沒有連消也沒有神石，大數據顯示此時買免遊高達90%會虧本，請停損。",
+      "❄️ 死水警告：大數據顯示此房近期剛開出過大獎，目前進入「冷卻死水期」，機台正在強力回收，請勿逗留。"
+    ]
+  },
+  "巴風特": {
+    high: [
+      "🔥 攻略特報：盤面頻繁掉落高賠率圖騰，且消除後補位容易形成二次以上的連鎖雪崩，建議直接開啟XTRA-BET！",
+      "🔥 實戰測試：消除連鎖極度順暢，且常伴隨百搭符號(Wild)大面積補位。此為經典的「大獎前兆」，請果斷提高單注金額。",
+      "🔥 買關建議：機台正處於極度狂熱狀態，高賠率符號頻繁大面積掉落，此時依據攻略購買免遊的投資報酬率最佳！"
+    ],
+    mid: [
+      "⚖️ 觀察區打法：雖然有消除，但連鎖次數偏少，難以觸發大面積雪崩。建議設定50轉自動，觀察「Scatter」聽牌的出現頻率再做決定。",
+      "⚖️ 震盪觀察：處於洗分狀態，輸贏持平。攻略建議使用「階梯式注碼」，每20轉微調一次金額，測試機台的底線。",
+      "⚖️ 聽牌測試：目前處於蓄力階段，免遊聽牌次數適中。可嘗試『階梯式微調注碼』打亂亂數，逼出免費遊戲。"
+    ],
+    low: [
+      "❄️ 死水警告：盤面充滿低賠率的撲克牌字母，且完全無法形成8個以上的群組消除。此為「深淵冷盤」，請勿在此浪費本金。",
+      "❄️ 冰凍特徵：連續40轉沒有看過任何一個Scatter符號，機台進入了死水期，強烈建議直接離開，千萬不要不甘心買關。",
+      "❄️ 高危警告：盤面充斥著低賠率的字母與數字符號，且完全沒有雪崩連鎖。硬拚只會讓本金迅速見底。"
+    ]
+  },
+  "戰神賽特": {
+    high: [
+      "🔥 經典戰神訊號：盤面連續給出3個聖甲蟲聽牌，且未消除的倍數球高達100x以上！強烈建議直接購買免費遊戲！",
+      "🔥 實戰測試：消除極度順暢，且連線時總是精準砸中紅球或紫球。機台庫存已滿，正處於大吐分階段，請拉高注碼。",
+      "🔥 聽牌訊號：連續出現3顆聖甲蟲聽牌動畫！專屬打法強烈建議：此時進免遊的倍率通常極高，可考慮直購免遊。"
+    ],
+    mid: [
+      "⚖️ 假訊號防守：倍數球有掉，但常常在沒有連線的時候出現（俗稱假訊號）。建議先用底注掛網，等待倍數球與連線同步的時機。",
+      "⚖️ 打底階段：處於不上不下的「保本期」，打回本金就卡住。實戰攻略建議：見好就收，或者換一個房號重新測試亂數。",
+      "⚖️ 趨勢觀察：若連續5次消除都沒有掉落任何倍數球，請立刻降注；反之若開始頻繁掉球，可嘗試階梯式加碼。"
+    ],
+    low: [
+      "❄️ 終極吃分期：連續數十轉空轉，沒有倍數球，連Scatter都不給。請嚴格執行停損，立刻關閉遊戲換房。",
+      "❄️ 冰凍特徵：即使偶爾連線，也全是最低賠率的圖形，且完全沒有後續的掉落補位。大數據顯示此區間極為危險，切勿買關。",
+      "❄️ 死水警告：倍數球完全消失！大數據顯示此區間的回報率極低，這是機台正在「回血」的鐵證。"
+    ]
+  },
+  "赤三國": {
+    high: [
+      "🔥 赤三國噴發：前三軸頻繁出現「百搭(Wild)符號」與高賠率的武將圖騰，連線如入無人之境！機台殺氣極重，建議直接購買免遊！",
+      "🔥 將帥齊聚：烽火台(Scatter)出現頻率大增，且每次連環消除的倍數疊加非常快。請緊抓這波爆發長龍，適度放大注碼。",
+      "🔥 買關建議：免費遊戲的觸發頻率正在急遽上升！連環計成功率高，倍數疊加速度異常順暢，切勿輕易下車。"
+    ],
+    mid: [
+      "⚖️ 膠著防守：兩軍陷入膠著，有連線但多為低賠率的兵器與兵卒，Wild符號常掉在第4、5軸無法串聯。建議以最低底注防守。",
+      "⚖️ 膠著狀態：偶爾能進免遊，但結算倍率不高。建議先以50轉為測試週期，若結算無法突破本金的120%，就考慮撤退。",
+      "⚖️ 過渡預警：百搭符號偶爾出現但常落在無法連線的第4、5軸，代表機台還在調節庫存。建議見好就收。"
+    ],
+    low: [
+      "❄️ 空城計警告：盤面猶如「空城計」，完全沒有百搭符號，聽牌烽火台徹底神隱。攻略網一致警告：此為絕對死水期，請立刻換房。",
+      "❄️ 敗局已定：連續30轉無任何大獎連線，咬分極度兇狠。在此冷卻期硬拚只會造成本金歸零，請帶上剩餘籌碼撤離。",
+      "❄️ 高危警告：系統強烈警告：此台目前的回報率極差，請勿嘗試用大注凹回來，容易造成本金歸零。"
+    ]
+  }
+};
+
+// 👑 VIP 專屬高階防吞噬策略庫
+const vipStrategies = [
+  "👑 VIP 獨家機密：系統演算偵測到「隱藏亂數池」正在注水，建議在接下來的第 12 至 15 轉之間，使用雙倍注碼進行突襲！",
+  "👑 VIP 專屬防吞噬：若遇到連續3次 Scatter 聽牌未進，此為伺服器『誘餌機制』。請立即調降底注 50% 運行 20 轉，再恢復原注碼。",
+  "👑 VIP 買關時機預判：即時特徵碼比對完成。當盤面連續兩把開出 0 消除時，下一把即是買入免遊勝率最高的『黃金突破點』。"
+];
+
+function getRandomStrategies(arr, count) {
+  let shuffled = [...arr].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+// 產生隨機風格的特徵碼
+function generateFeatureCode() {
+  const chars = '0123456789ABCDEF';
+  let code = '0x';
+  for(let i=0; i<8; i++) code += chars[Math.floor(Math.random() * 16)];
+  return code + " (已鎖定)";
+}
+
+async function openRoom(room, rate){
+  // 檢查剩餘次數限制 (上限 5 次)
+  if (currentTrialsLeft <= 0) {
+    document.getElementById("gamePage").innerHTML = `
+      <div class='card' style="border: 1px solid var(--danger); box-shadow: 0 0 30px rgba(255,59,59,0.3);">
+        <h2 style="color:var(--danger); margin-top:0;">🚫 今日分析次數已耗盡</h2>
+        <p style="color:#b0a090; font-size:15px; margin-bottom:20px;">您的 VIP 帳戶體驗解析額度已全部使用完畢。</p>
+        <button onclick="pushLogToCloud('點擊導向LINE'); window.open('https://lin.ee/t4JAsc3', '_blank')" class="btn-line-upgrade">✨ 點我聯絡 Ai 小老蘇補次數 🚀</button>
+        <br><br>
+        <button class="btn-secondary" onclick="loadGameList()" style="width:80%;">⬅ 返回大廳 (僅能瀏覽)</button>
+      </div>
+    `;
+    return; 
+  }
+
+  // 扣除次數並同步回 Supabase
+  currentTrialsLeft--;
+  updateTrialCounterUI();
+  if(_db) {
+    // 已修改為 atg_VIP_users
+    await _db.from('atg_VIP_users').update({ trials_left: currentTrialsLeft }).or(`device_id.eq.${deviceId},username.eq.${currentPlayer}`);
+  }
+
+  document.getElementById("gamePage").innerHTML = `
+    <div class='card loading-box'>
+      <div class='scanner' style="background:var(--success); box-shadow:0 0 20px var(--success);"></div>
+      <p class='loading-text' style="color:var(--success)">VIP 通道已開啟，正在解析底層代碼與勝率矩陣...</p>
+    </div>
+  `;
+
+  setTimeout(() => {
+    let gamePool = strategyPools[currentGame] || strategyPools["戰神賽特2"];
+    let selectedPool = rate >= 75 ? gamePool.high : rate >= 50 ? gamePool.mid : gamePool.low;
+    
+    let strategies = getRandomStrategies(selectedPool, 2);
+    let randomVip = vipStrategies[Math.floor(Math.random() * vipStrategies.length)];
+    strategies.push(randomVip);
+
+    let html = "";
+    strategies.forEach((s) => {
+      let isVip = s.includes("VIP");
+      html += `<div class='strategy ${isVip ? 'vip-alert' : ''}'>📌 ${s}</div>`;
+    });
+
+    let featureCode = generateFeatureCode();
+
+    document.getElementById("gamePage").innerHTML = `
+      <div class='card'>
+        <h2 style="color:var(--primary); margin-top:0;">📊 房號 no.${room} 深度解析報告</h2>
+        <table style="width:100%; margin:15px 0; border-collapse:collapse; background:rgba(0,0,0,0.6); border-radius:12px; overflow:hidden; border: 1px solid rgba(255,215,0,0.3);">
+          <tr style="border-bottom:1px solid rgba(255,215,0,0.2);">
+            <td style="padding:12px; text-align:left; color:#b0a090;">即時爆分率</td>
+            <td style="padding:12px; text-align:right; color:var(--primary); font-size:20px; font-weight:900; text-shadow: 0 0 10px rgba(255,215,0,0.5);">精確 ${rate}%</td>
+          </tr>
+          <tr>
+            <td style="padding:12px; text-align:left; color:#b0a090;">底層特徵碼 <span style="font-size:10px; color:var(--success);">(VIP專屬)</span></td>
+            <td style="padding:12px; text-align:right; color:var(--success); font-weight:bold; letter-spacing: 1px; text-shadow: 0 0 8px rgba(0,230,118,0.4);">${featureCode}</td>
+          </tr>
+        </table>
+        <h3 style="color:var(--vip-gold); font-size: 16px;">🧠 綜合實戰操作建議 (已包含防吞噬演算)</h3>
+        <div class="strategy-box">${html}</div>
+        <br>
+        <button onclick="openGame('${currentGame}')" style="width:80%;">⬅ 返回房間列表</button>
+      </div>
+    `;
+    
+    pushLogToCloud("VIP查看深度分析", room, rate);
+  }, 1200);
+}
+</script>
+
+</body>
+</html>
