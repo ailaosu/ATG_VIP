@@ -339,7 +339,7 @@ button:hover {
 // ⚙️ 👇 專屬 Supabase 金鑰 👇
 // ===================================================
 const SUPABASE_URL = "https://igefpbxlchcevyqirwiw.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZWZwYnhsY2hjZXZ5cWlyd2l3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzODYxNzEsImV4cCI6MjA5NTk2MjE3MX0.cjODwH3t-DKKBRSDOxyRlp-IPqwim4hgOqwQWMln4uA";
+const SUPABASE_ANON_KEY = "sb_publishable_HyDUEy0WqtjMns_YlV-z6w_8hfu9zqY";
 // ===================================================
 
 // 🎯 1. 遊戲列表
@@ -350,7 +350,7 @@ const games = [
   { name: "赤三國", img: "赤三國gameLogo.webp" }
 ];
 
-// 💾 2. 核心變數設定 (分析次數上限改為 5 次)
+// 💾 2. 核心變數設定
 let currentPlayer = "未登入會員";
 let currentGame = "";
 let currentTrialsLeft = 5; 
@@ -385,14 +385,14 @@ function updateTrialCounterUI() {
   }
 }
 
-// ⚡ 數據同步到雲端後台
+// ⚡ 數據同步到雲端後台 (保持紀錄至 atg_logs)
 async function pushLogToCloud(actionType, roomNo = "", roomRate = 0) {
   if(!_db) return;
   try {
     await _db.from('atg_logs').insert([
       {
         player_name: currentPlayer,
-        balance: 0, // 已移除本金欄位，預設帶入0值以防欄位衝突
+        balance: 0, 
         game_name: currentGame || actionType,
         room_no: roomNo || actionType,
         rate: roomRate,
@@ -457,15 +457,15 @@ async function handleVipLogin() {
 
     if (!authError && authData.user) {
       currentPlayer = authData.user.email;
-      // 從自訂用戶表拿取剩餘次數，若無則預設為5
-      const { data: prof } = await _db.from('atg_users').select('trials_left').eq('device_id', authData.user.id).maybeSingle();
+      // 已修改為 atg_VIP_users
+      const { data: prof } = await _db.from('atg_VIP_users').select('trials_left').eq('device_id', authData.user.id).maybeSingle();
       currentTrialsLeft = prof ? prof.trials_left : 5;
       updateTrialCounterUI();
       showStrategy();
     } else {
-      // 驗證模組 B: 如果不是用 Auth 而是建立自訂資料表 (如 atg_users) 比對明文帳密
+      // 驗證模組 B: 自訂資料表 (atg_VIP_users) 比對明文帳密
       const { data: customUser, error: customError } = await _db
-        .from('atg_users')
+        .from('atg_VIP_users')
         .select('*')
         .eq('username', userInp)
         .eq('password', passInp)
@@ -634,7 +634,7 @@ const strategyPools = {
       "⚖️ 趨勢觀察：若連續5次消除都沒有掉落任何倍數球，請立刻降注；反之若開始頻繁掉球，可嘗試階梯式加碼。"
     ],
     low: [
-      "❄️ 終極吃分期：連續數十轉空轉，沒有倍數球，連Scatter don't give. 請嚴格執行停損，立刻關閉遊戲換房。",
+      "❄️ 終極吃分期：連續數十轉空轉，沒有倍數球，連Scatter都不給。請嚴格執行停損，立刻關閉遊戲換房。",
       "❄️ 冰凍特徵：即使偶爾連線，也全是最低賠率的圖形，且完全沒有後續的掉落補位。大數據顯示此區間極為危險，切勿買關。",
       "❄️ 死水警告：倍數球完全消失！大數據顯示此區間的回報率極低，這是機台正在「回血」的鐵證。"
     ]
@@ -684,7 +684,7 @@ async function openRoom(room, rate){
     document.getElementById("gamePage").innerHTML = `
       <div class='card' style="border: 1px solid var(--danger); box-shadow: 0 0 30px rgba(255,59,59,0.3);">
         <h2 style="color:var(--danger); margin-top:0;">🚫 今日分析次數已耗盡</h2>
-        <p style="color:#b0a090; font-size:15px; margin-bottom:20px;">您的 VIP 帳戶今日的 5 次體驗解析額度已全部使用完畢。</p>
+        <p style="color:#b0a090; font-size:15px; margin-bottom:20px;">您的 VIP 帳戶體驗解析額度已全部使用完畢。</p>
         <button onclick="pushLogToCloud('點擊導向LINE'); window.open('https://lin.ee/t4JAsc3', '_blank')" class="btn-line-upgrade">✨ 點我聯絡 Ai 小老蘇補次數 🚀</button>
         <br><br>
         <button class="btn-secondary" onclick="loadGameList()" style="width:80%;">⬅ 返回大廳 (僅能瀏覽)</button>
@@ -697,8 +697,8 @@ async function openRoom(room, rate){
   currentTrialsLeft--;
   updateTrialCounterUI();
   if(_db) {
-    // 同步更新至雲端用戶表 (同時相容 device_id 與 username 作為篩選鍵)
-    await _db.from('atg_users').update({ trials_left: currentTrialsLeft }).or(`device_id.eq.${deviceId},username.eq.${currentPlayer}`);
+    // 已修改為 atg_VIP_users
+    await _db.from('atg_VIP_users').update({ trials_left: currentTrialsLeft }).or(`device_id.eq.${deviceId},username.eq.${currentPlayer}`);
   }
 
   document.getElementById("gamePage").innerHTML = `
