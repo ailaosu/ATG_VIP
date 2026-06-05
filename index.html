@@ -302,12 +302,13 @@ button:hover {
   100% { transform: scale(1.03); box-shadow: 0 0 25px rgba(0, 195, 0, 0.8); }
 }
 
-/* --- 動態買免遊訊號專用樣式 (新增) --- */
+/* --- 動態買免遊訊號專用樣式 --- */
 .buy-signal-box { margin-top: 15px; padding: 18px; border: 2px dashed var(--danger); border-radius: 12px; background: linear-gradient(135deg, rgba(255, 59, 59, 0.15), rgba(20, 5, 5, 0.9)); color: #fff; text-align: left; box-shadow: 0 0 20px rgba(255, 59, 59, 0.2); line-height: 1.8; font-size: 15px; }
-.buy-signal-title { color: var(--danger); font-weight: 900; font-size: 18px; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; }
-.symbol-highlight { color: #fff; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; border: 1px solid rgba(255,215,0,0.3); margin: 2px 0; white-space: nowrap; }
-.symbol-img { height: 24px; width: auto; margin-right: 6px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
-.symbol-count { color: var(--primary); margin-left: 2px; font-size: 16px; }
+.buy-signal-title { color: var(--danger); font-weight: 900; font-size: 18px; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; }
+.symbol-highlight { color: #fff; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 6px 10px; border-radius: 8px; display: inline-flex; align-items: center; border: 1px solid rgba(255,215,0,0.3); margin: 4px 2px; white-space: nowrap; font-size: 16px; }
+/* 圖片已放大至 40px */
+.symbol-img { height: 40px; width: auto; margin-right: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9)); vertical-align: middle; }
+.symbol-count { color: var(--primary); margin-left: 4px; font-size: 18px; font-weight: 900; }
 </style>
 </head>
 
@@ -349,7 +350,7 @@ const SUPABASE_URL = "https://igefpbxlchcevyqirwiw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HyDUEy0WqtjMns_YlV-z6w_8hfu9zqY";
 // ===================================================
 
-// 🎯 1. 遊戲列表 (順序已修正為：赤三國、戰神賽特、巴風特、戰神賽特2)
+// 🎯 1. 遊戲列表
 const games = [
   { name: "赤三國", img: "赤三國gameLogo.webp" },
   { name: "戰神賽特", img: "game_icon (1).webp" },
@@ -392,7 +393,7 @@ function updateTrialCounterUI() {
   }
 }
 
-// ⚡ 數據同步到雲端後台 (保持紀錄至 atg_logs)
+// ⚡ 數據同步到雲端後台
 async function pushLogToCloud(actionType, roomNo = "", roomRate = 0) {
   if(!_db) return;
   try {
@@ -456,7 +457,6 @@ async function handleVipLogin() {
   }
 
   try {
-    // 驗證模組 A: 優先嘗試 Supabase Auth 標準電子信箱/密碼登入
     const { data: authData, error: authError } = await _db.auth.signInWithPassword({
       email: userInp,
       password: passInp,
@@ -469,7 +469,6 @@ async function handleVipLogin() {
       updateTrialCounterUI();
       showStrategy();
     } else {
-      // 驗證模組 B: 自訂資料表 (atg_VIP_users) 比對明文帳密
       const { data: customUser, error: customError } = await _db
         .from('atg_VIP_users')
         .select('*')
@@ -609,6 +608,19 @@ const strategyPools = {
       "❄️ 冰凍期警告：盤面連最基本的8個相同符號都湊不齊，且連續50轉沒有掉落任何倍數球，機台正在瘋狂吃分，請立刻換房！",
       "❄️ 買關地雷：轉動時畫面異常乾淨，沒有連消也沒有神石，大數據顯示此時買免遊高達90%會虧本，請停損。",
       "❄️ 死水警告：大數據顯示此房近期剛開出過大獎，目前進入「冷卻死水期」，機台正在強力回收，請勿逗留。"
+    ],
+    vip: [
+      "👑 VIP 獨家機密：底層參數顯示「黃金聖甲蟲」掉落權重已提升 300%，建議開啟 50 轉自動，並鎖定 1.5 倍注碼。",
+      "👑 VIP 專屬防吞噬：若前三軸頻繁出現倍數神石但無連線，此為系統「過渡誘餌」。請立刻切換為手動單點 15 轉以重置亂數。",
+      "👑 VIP 買關預判：偵測到伺服器即將釋放「百倍神石」，若連續 3 把獲得微小贏分(小於底注)，下一把建議直接買入免遊。",
+      "👑 VIP 獨家機密：系統演算出「覺醒聖甲蟲」即將在 20 轉內觸發高機率落盤，請將注碼提升至平時的 2 倍進行埋伏。",
+      "👑 VIP 專屬防吞噬：連續 5 把空轉且畫面無任何神石？這是機台深度回血特徵。請暫停 3 分鐘或立刻調降底注至最低。",
+      "👑 VIP 買關預判：大數據比對完成，當盤面同時出現 4 顆紫寶石與 1 顆倍數石，即為免遊潛在爆發點，可考慮進場。",
+      "👑 VIP 獨家機密：當前房間的「連消倍率增幅」已被 VIP 權限鎖定，建議在接下來的 10 轉內，大膽採用階梯式加注。",
+      "👑 VIP 專屬防吞噬：若遇到 3 顆聖甲蟲聽牌卻「滑過」未進，請馬上關閉自動轉，手動慢點 5 把，大概率會迎來回馬槍。",
+      "👑 VIP 買關預判：底層代碼攔截到異常波動，若連續兩次消除都帶有 10x 以上神石，此為購買免遊的絕佳黃金開局。",
+      "👑 VIP 獨家機密：已為您分配專屬高波動線路，此房號目前對「連續消除」極度敏感，建議保持穩定注碼持續推進。",
+      "👑 VIP 專屬防吞噬：當您連續兩次購買免遊皆未回本時，系統已標記您的 IP。請立刻更換房號並重新執行 VIP 深度解析。"
     ]
   },
   "巴風特": {
@@ -626,6 +638,18 @@ const strategyPools = {
       "❄️ 死水警告：盤面充滿低賠率的撲克牌字母，且完全無法形成8個以上的群組消除。此為「深淵冷盤」，請勿在此浪費本金。",
       "❄️ 冰凍特徵：連續40轉沒有看過任何一個Scatter符號，機台進入了死水期，強烈建議直接離開，千萬不要不甘心買關。",
       "❄️ 高危警告：盤面充斥著低賠率的字母與數字符號，且完全沒有雪崩連鎖。硬拚只會讓本金迅速見底。"
+    ],
+    vip: [
+      "👑 VIP 獨家機密：偵測到「骷髏頭特效」活躍度異常飆高，建議立即開啟 XTRA-BET 附加注碼，捕捉超級免遊。",
+      "👑 VIP 專屬防吞噬：若連續 3 次引發大面積雪崩卻沒有給 Scatter 印記，這是系統在「壓分」。請立刻降注 50% 運行 15 轉。",
+      "👑 VIP 買關預判：大數據矩陣顯示，當盤面邊角連續兩把出現 Wild 百搭符號，此時買入一般免遊有 85% 機率觸發大獎。",
+      "👑 VIP 獨家機密：伺服器「連鎖補位」機制已放寬，建議使用手動點擊，每次間隔 3 秒，能大幅提升高賠率圖騰掉落率。",
+      "👑 VIP 專屬防吞噬：畫面充斥字母卻無任何消除時，代表深淵模式啟動。請果斷停止 5 分鐘，避開這波強力吃分期。",
+      "👑 VIP 買關預判：底層攔截到高爆發特徵碼！若盤面開出「無 Wild 卻連消 3 次」，下一手是購買超級免遊的絕殺點。",
+      "👑 VIP 獨家機密：已成功為您切換巴風特專屬 RTP 補償通道，接下來 25 轉內若有 Scatter 聽牌，進關勝率極高。",
+      "👑 VIP 專屬防吞噬：當您連續兩次購買免遊皆未回本時，系統已標記您的 IP。請立刻更換房號並重新執行 VIP 深度解析。",
+      "👑 VIP 買關預判：監控到「紅色高賠率符號」佔據盤面 40% 以上且未消除，此為大獎前兆，建議直接買入免遊突破。",
+      "👑 VIP 獨家機密：VIP 權限已為您開啟隱藏防禦機制。若單把贏分超過 50 倍，建議見好就收，避免亂數池迅速冷卻。"
     ]
   },
   "戰神賽特": {
@@ -643,6 +667,19 @@ const strategyPools = {
       "❄️ 終極吃分期：連續數十轉空轉，沒有倍數球，連Scatter都不給。請嚴格執行停損，立刻關閉遊戲換房。",
       "❄️ 冰凍特徵：即使偶爾連線，也全是最低賠率的圖形，且完全沒有後續的掉落補位。大數據顯示此區間極為危險，切勿買關。",
       "❄️ 死水警告：倍數球完全消失！大數據顯示此區間的回報率極低，這是機台正在「回血」的鐵證。"
+    ],
+    vip: [
+      "👑 VIP 獨家機密：系統攔截到「紫球與紅球」的掉落權重已達巔峰！建議設定 30 轉自動，並鎖定平時的 1.5 倍注碼。",
+      "👑 VIP 專屬防吞噬：若連續 10 把出現倍數球卻完美避開所有連線，這是典型的「殺豬盤」。請馬上切換至手動最低注。",
+      "👑 VIP 買關預判：演算矩陣確認，當第一軸與第六軸同時出現「魔幻之眼」，此時買入免遊的爆發乘數將顯著提升。",
+      "👑 VIP 獨家機密：伺服器大數據顯示，此區間的 Scatter 符號具有「連莊」特性。若剛出免遊，強烈建議繼續追擊 20 轉。",
+      "👑 VIP 專屬防吞噬：畫面異常乾淨，連續 5 把連最基本的消除都沒有。請立即停止下注，這波死水期將持續至少 50 轉。",
+      "👑 VIP 買關預判：若前一轉剛好消除 4 次且最後一顆為紅球 50x，此為「隱藏觸發點」，馬上買關的勝率高達 90%。",
+      "👑 VIP 獨家機密：已為您繞過戰神賽特的基礎咬分亂數。建議採用「快點快停」的手法，強行介入倍數球的掉落判定。",
+      "👑 VIP 專屬防吞噬：聽牌 3 顆聖甲蟲卻在最後一軸加速滑過，請提高警覺！這是系統誘點，接下來 10 轉請勿買免遊。",
+      "👑 VIP 買關預判：底層代碼解析出異常！當前房號的 RTP 正在進行「波段回補」，此時大注買關有極高機率觸發千倍大獎。",
+      "👑 VIP 獨家機密：黃金特徵碼已生效。請特別留意「眼鏡蛇」與「弓箭」的連線，它們將是接下來引導免遊降臨的關鍵。",
+      "👑 VIP 專屬防吞噬：當您連續兩次購買免遊皆未回本時，系統已標記您的 IP。請立刻更換房號並重新執行 VIP 深度解析。"
     ]
   },
   "赤三國": {
@@ -660,16 +697,22 @@ const strategyPools = {
       "❄️ 空城計警告：盤面猶如「空城計」，完全沒有百搭符號，聽牌烽火台徹底神隱。攻略網一致警告：此為絕對死水期，請立刻換房。",
       "❄️ 敗局已定：連續30轉無任何大獎連線，咬分極度兇狠。在此冷卻期硬拚只會造成本金歸零，請帶上剩餘籌碼撤離。",
       "❄️ 高危警告：系統強烈警告：此台目前的回報率極差，請勿嘗試用大注凹回來，容易造成本金歸零。"
+    ],
+    vip: [
+      "👑 VIP 獨家機密：大數據偵測到「前三軸 Wild 百搭」出現機率已解鎖！建議將注碼拉高 2 檔，迎接連續斬將爆發。",
+      "👑 VIP 專屬防吞噬：若「龍王(Scatter)」連續 2 次只出 3 顆且沒有連線輔助，此為假高潮。請立刻降回底注防守。",
+      "👑 VIP 買關預判：演算顯示，當盤面同時出現「玉璽」與「連弩」且發生消除，下一手直接買入免遊的連環計疊加最快。",
+      "👑 VIP 獨家機密：系統已為您鎖定「烽火台」的高頻率波段。建議開啟 50 轉自動，耐心等待大面積連消觸發免遊。",
+      "👑 VIP 專屬防吞噬：若 Wild 符號連續 5 把只出現在第 4 或第 5 軸（無法連線），機台正在嚴重調節庫存，請果斷換房。",
+      "👑 VIP 買關預判：當單把轉動中，消除次數達到 4 次且伴隨武將動畫，這是系統即將大吐分的暗號，強烈建議買關進場！",
+      "👑 VIP 獨家機密：VIP 專屬通道已過濾掉 70% 的無效低賠率亂數。請把握目前的「活躍期」，果斷採用階梯式加注法。",
+      "👑 VIP 專屬防吞噬：連續 20 轉沒有觸發任何 Wild 符號，這代表赤三國進入了「空城計」冷盤，繼續打只會徒增耗損。",
+      "👑 VIP 買關預判：攔截到底層特徵碼變化，若上一把的贏分恰好等於您的底注，這是一個極度隱蔽的買關突破點。",
+      "👑 VIP 獨家機密：將帥齊聚特徵已啟動！接下來的 15 轉內，高賠率武將圖騰將密集掉落，請專注捕捉這波連線長龍。",
+      "👑 VIP 專屬防吞噬：當您連續兩次購買免遊皆未回本時，系統已標記您的 IP。請立刻更換房號並重新執行 VIP 深度解析。"
     ]
   }
 };
-
-// 👑 VIP 專屬高階防吞噬策略庫
-const vipStrategies = [
-  "👑 VIP 獨家機密：系統演算偵測到「隱藏亂數池」正在注水，建議在接下來的第 12 至 15 轉之間，使用雙倍注碼進行突襲！",
-  "👑 VIP 專屬防吞噬：若遇到連續3次 Scatter 聽牌未進，此為伺服器『誘餌機制』。請立即調降底注 50% 運行 20 轉，再恢復原注碼。",
-  "👑 VIP 買關時機預判：即時特徵碼比對完成。當盤面連續兩把開出 0 消除時，下一把即是買入免遊勝率最高的『黃金突破點』。"
-];
 
 function getRandomStrategies(arr, count) {
   let shuffled = [...arr].sort(() => 0.5 - Math.random());
@@ -684,7 +727,7 @@ function generateFeatureCode() {
   return code + " (已鎖定)";
 }
 
-// 🎯 新增的動態買免遊訊號演算邏輯 (整合圖片與數量限制)
+// 🎯 新增的動態買免遊訊號演算邏輯
 function generateBuyFreeSignal(gameName) {
   // 戰神系列資料庫
   const dataZeus = {
@@ -744,11 +787,11 @@ function generateBuyFreeSignal(gameName) {
     let extraText = "";
     if (gameName === "戰神賽特2") {
       let scatter = Math.random() > 0.5 ? {name: '聖甲蟲', img: '9.png'} : {name: '覺醒聖甲蟲', img: '11.png'};
-      extraText = `，且畫面閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="${scatter.img}">『${scatter.name}』</span> 聽牌跡象`;
+      extraText = `或畫面閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="${scatter.img}">『${scatter.name}』</span> 聽牌跡象`;
     } else if (gameName === "戰神賽特") {
-      extraText = `，且畫面連續閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="9.png">『聖甲蟲』</span> 聽牌跡象`;
+      extraText = `或畫面連續閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="9.png">『聖甲蟲』</span> 聽牌跡象`;
     } else if (gameName === "赤三國") {
-      extraText = `，且畫面頻繁閃過 3 面 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="image-removebg-preview (9).png">『龍王』</span> 聽牌準備進入 15 轉免遊`;
+      extraText = `或畫面頻繁閃過 3 面 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="image-removebg-preview (9).png">『龍王』</span> 聽牌準備進入 15 轉免遊`;
     }
 
     let tailText = gameName === "赤三國" ? "此時機台殺氣極重，為黃金買關突破點！" : "代表機台即將進入覺醒大爆發，強烈建議直接買入免遊！";
@@ -756,8 +799,8 @@ function generateBuyFreeSignal(gameName) {
     return `
       <div class="buy-signal-box">
         <div class="buy-signal-title">⚔️ VIP 黃金買免訊號</div>
-        當盤面上同時出現<br>${symbolText} <br><br>
-        (總計 <strong>${total}</strong> 個)${extraText}時，${tailText}
+        ${symbolText} <br><br>
+        ${extraText}時，${tailText}
       </div>
     `;
   } 
@@ -808,7 +851,9 @@ async function openRoom(room, rate){
     let selectedPool = rate >= 75 ? gamePool.high : rate >= 50 ? gamePool.mid : gamePool.low;
     
     let strategies = getRandomStrategies(selectedPool, 2);
-    let randomVip = vipStrategies[Math.floor(Math.random() * vipStrategies.length)];
+    
+    // 👑 從該遊戲專屬的 VIP 策略庫中隨機抽出 1 條
+    let randomVip = gamePool.vip[Math.floor(Math.random() * gamePool.vip.length)];
     strategies.push(randomVip);
 
     let html = "";
@@ -838,7 +883,7 @@ async function openRoom(room, rate){
         
         ${buySignalHtml}
 
-        <h3 style="color:var(--vip-gold); font-size: 16px; margin-top: 20px;">🧠 綜合實戰操作建議 (已包含防吞噬演算)</h3>
+        <h3 style="color:var(--vip-gold); font-size: 16px; margin-top: 20px;">🧠 綜合實戰操作建議 (已包含專屬防吞噬)</h3>
         <div class="strategy-box">${html}</div>
         <br>
         <button onclick="openGame('${currentGame}')" style="width:80%;">⬅ 返回房間列表</button>
