@@ -305,10 +305,9 @@ button:hover {
 /* --- 動態買免遊訊號專用樣式 --- */
 .buy-signal-box { margin-top: 15px; padding: 18px; border: 2px dashed var(--danger); border-radius: 12px; background: linear-gradient(135deg, rgba(255, 59, 59, 0.15), rgba(20, 5, 5, 0.9)); color: #fff; text-align: left; box-shadow: 0 0 20px rgba(255, 59, 59, 0.2); line-height: 1.8; font-size: 15px; }
 .buy-signal-title { color: var(--danger); font-weight: 900; font-size: 18px; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; }
-.symbol-highlight { color: #fff; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 6px 10px; border-radius: 8px; display: inline-flex; align-items: center; border: 1px solid rgba(255,215,0,0.3); margin: 4px 2px; white-space: nowrap; font-size: 16px; }
-/* 圖片已放大至 40px */
-.symbol-img { height: 40px; width: auto; margin-right: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9)); vertical-align: middle; }
-.symbol-count { color: var(--primary); margin-left: 4px; font-size: 18px; font-weight: 900; }
+.symbol-highlight { color: #fff; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; border: 1px solid rgba(255,215,0,0.3); margin: 6px 4px; white-space: nowrap; font-size: 16px; }
+.symbol-img { height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9)); vertical-align: middle; }
+.symbol-count { color: var(--primary); margin-left: 6px; font-size: 18px; font-weight: 900; }
 </style>
 </head>
 
@@ -451,6 +450,8 @@ async function handleVipLogin() {
     alert("⚠️ 雲端資料庫未正常載入，將啟用本地沙盒測試。");
     currentPlayer = userInp;
     currentTrialsLeft = 5;
+    localStorage.setItem('atg_vip_user', currentPlayer);
+    localStorage.setItem('atg_vip_trials', currentTrialsLeft);
     updateTrialCounterUI();
     showStrategy();
     return;
@@ -466,6 +467,8 @@ async function handleVipLogin() {
       currentPlayer = authData.user.email;
       const { data: prof } = await _db.from('atg_VIP_users').select('trials_left').eq('device_id', authData.user.id).maybeSingle();
       currentTrialsLeft = prof ? prof.trials_left : 5;
+      localStorage.setItem('atg_vip_user', currentPlayer);
+      localStorage.setItem('atg_vip_trials', currentTrialsLeft);
       updateTrialCounterUI();
       showStrategy();
     } else {
@@ -479,6 +482,8 @@ async function handleVipLogin() {
       if (customUser) {
         currentPlayer = customUser.username || userInp;
         currentTrialsLeft = customUser.trials_left !== undefined ? customUser.trials_left : 5;
+        localStorage.setItem('atg_vip_user', currentPlayer);
+        localStorage.setItem('atg_vip_trials', currentTrialsLeft);
         updateTrialCounterUI();
         showStrategy();
       } else {
@@ -489,6 +494,21 @@ async function handleVipLogin() {
   } catch(e) {
     console.error(e);
     alert("連結 Supabase 發生異常錯誤");
+    location.reload();
+  }
+}
+
+// 🚪 登出功能
+function logout() {
+  localStorage.removeItem('atg_vip_user');
+  localStorage.removeItem('atg_vip_trials');
+  if (_db) {
+    _db.auth.signOut().then(() => {
+      location.reload();
+    }).catch(() => {
+      location.reload();
+    });
+  } else {
     location.reload();
   }
 }
@@ -505,6 +525,7 @@ function showStrategy(){
         <span style="font-size:12px; color:var(--success);">* 本日剩餘高階解析次數已載入完成（上限 5 次）。</span>
       </div>
       <button onclick="loadGameList()" style="width:80%; margin-top:20px;">進入 VIP 專屬大廳</button>
+      <button class="btn-secondary" onclick="logout()" style="width:80%; margin-top:10px;">🚪 登出帳號</button>
     </div>
   `;
   pushLogToCloud("VIP會員登入成功");
@@ -532,6 +553,8 @@ function loadGameList(){
         VIP 專業版提供精準波動度、爆分率與獨家即時特徵碼。
       </p>
       <div class="game-grid">${gameCards}</div>
+      <br>
+      <button class="btn-secondary" onclick="logout()" style="width: 80%; margin-top: 15px;">🚪 登出系統</button>
     </div>
   `;
 }
@@ -690,7 +713,7 @@ const strategyPools = {
     ],
     mid: [
       "⚖️ 膠著防守：兩軍陷入膠著，有連線但多為低賠率的兵器與兵卒，Wild符號常掉在第4、5軸無法串聯。建議以最低底注防守。",
-      "⚖️ 膠著狀態：偶爾能進免遊，但結算倍率不高。建議先以50轉為測試週期，若結算無法突破本金的120%，就考慮撤退。",
+      "⚖️ 膠著狀態：偶爾能進免遊，讓結算倍率不高。建議先以50轉為測試週期，若結算無法突破本金的120%，就考慮撤退。",
       "⚖️ 過渡預警：百搭符號偶爾出現但常落在無法連線的第4、5軸，代表機台還在調節庫存。建議見好就收。"
     ],
     low: [
@@ -765,6 +788,7 @@ function generateBuyFreeSignal(gameName) {
     let lowCount = 0;
     let total = 0;
     
+    // 嚴格數量控制：總數介於 10 到 18 之間，單一數量 3~7
     while (!valid) {
       total = 0;
       highCounts = [];
@@ -780,27 +804,14 @@ function generateBuyFreeSignal(gameName) {
 
     let symbolText = "";
     for(let i=0; i<numHigh; i++){
-      symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedHigh[i].img}">『${selectedHigh[i].name}』<span class="symbol-count">x${highCounts[i]}</span></span>、`;
+      symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedHigh[i].img}"><span class="symbol-count">x${highCounts[i]}</span></span>`;
     }
-    symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedLow.img}">『${selectedLow.name}』<span class="symbol-count">x${lowCount}</span></span>`;
-
-    let extraText = "";
-    if (gameName === "戰神賽特2") {
-      let scatter = Math.random() > 0.5 ? {name: '聖甲蟲', img: '9.png'} : {name: '覺醒聖甲蟲', img: '11.png'};
-      extraText = `或畫面閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="${scatter.img}">『${scatter.name}』</span> 聽牌跡象`;
-    } else if (gameName === "戰神賽特") {
-      extraText = `或畫面連續閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="9.png">『聖甲蟲』</span> 聽牌跡象`;
-    } else if (gameName === "赤三國") {
-      extraText = `或畫面頻繁閃過 3 面 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="image-removebg-preview (9).png">『龍王』</span> 聽牌準備進入 15 轉免遊`;
-    }
-
-    let tailText = gameName === "赤三國" ? "此時機台殺氣極重，為黃金買關突破點！" : "代表機台即將進入覺醒大爆發，強烈建議直接買入免遊！";
+    symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedLow.img}"><span class="symbol-count">x${lowCount}</span></span>`;
 
     return `
       <div class="buy-signal-box">
         <div class="buy-signal-title">⚔️ VIP 黃金買免訊號</div>
-        ${symbolText} <br><br>
-        ${extraText}時，${tailText}
+        ${symbolText}
       </div>
     `;
   } 
@@ -833,6 +844,7 @@ async function openRoom(room, rate){
 
   // 扣除次數並同步回 Supabase
   currentTrialsLeft--;
+  localStorage.setItem('atg_vip_trials', currentTrialsLeft);
   updateTrialCounterUI();
   if(_db) {
     // 已修改為 atg_VIP_users
@@ -893,6 +905,20 @@ async function openRoom(room, rate){
     pushLogToCloud("VIP查看深度分析", room, rate);
   }, 1200);
 }
+
+// 恢復登入狀態機制
+function restoreSession() {
+  const savedUser = localStorage.getItem('atg_vip_user');
+  const savedTrials = localStorage.getItem('atg_vip_trials');
+  if (savedUser) {
+    currentPlayer = savedUser;
+    currentTrialsLeft = savedTrials !== null ? parseInt(savedTrials) : 5;
+    updateTrialCounterUI();
+    loadGameList(); // 重整後直接進入大廳
+  }
+}
+restoreSession();
+
 </script>
 
 </body>
