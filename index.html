@@ -301,6 +301,13 @@ button:hover {
   0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 195, 0, 0.4); }
   100% { transform: scale(1.03); box-shadow: 0 0 25px rgba(0, 195, 0, 0.8); }
 }
+
+/* --- 動態買免遊訊號專用樣式 (新增) --- */
+.buy-signal-box { margin-top: 15px; padding: 18px; border: 2px dashed var(--danger); border-radius: 12px; background: linear-gradient(135deg, rgba(255, 59, 59, 0.15), rgba(20, 5, 5, 0.9)); color: #fff; text-align: left; box-shadow: 0 0 20px rgba(255, 59, 59, 0.2); line-height: 1.8; font-size: 15px; }
+.buy-signal-title { color: var(--danger); font-weight: 900; font-size: 18px; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; }
+.symbol-highlight { color: #fff; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; border: 1px solid rgba(255,215,0,0.3); margin: 2px 0; white-space: nowrap; }
+.symbol-img { height: 24px; width: auto; margin-right: 6px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+.symbol-count { color: var(--primary); margin-left: 2px; font-size: 16px; }
 </style>
 </head>
 
@@ -342,12 +349,12 @@ const SUPABASE_URL = "https://igefpbxlchcevyqirwiw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HyDUEy0WqtjMns_YlV-z6w_8hfu9zqY";
 // ===================================================
 
-// 🎯 1. 遊戲列表
+// 🎯 1. 遊戲列表 (順序已修正為：赤三國、戰神賽特、巴風特、戰神賽特2)
 const games = [
-  { name: "戰神賽特2", img: "zh-tw.jpg" },
-  { name: "巴風特", img: "game_icon.webp" },
+  { name: "赤三國", img: "赤三國gameLogo.webp" },
   { name: "戰神賽特", img: "game_icon (1).webp" },
-  { name: "赤三國", img: "赤三國gameLogo.webp" }
+  { name: "巴風特", img: "game_icon.webp" },
+  { name: "戰神賽特2", img: "zh-tw.jpg" }
 ];
 
 // 💾 2. 核心變數設定
@@ -457,7 +464,6 @@ async function handleVipLogin() {
 
     if (!authError && authData.user) {
       currentPlayer = authData.user.email;
-      // 已修改為 atg_VIP_users
       const { data: prof } = await _db.from('atg_VIP_users').select('trials_left').eq('device_id', authData.user.id).maybeSingle();
       currentTrialsLeft = prof ? prof.trials_left : 5;
       updateTrialCounterUI();
@@ -678,6 +684,95 @@ function generateFeatureCode() {
   return code + " (已鎖定)";
 }
 
+// 🎯 新增的動態買免遊訊號演算邏輯 (整合圖片與數量限制)
+function generateBuyFreeSignal(gameName) {
+  // 戰神系列資料庫
+  const dataZeus = {
+    high: [
+      {name: '魔幻之眼', img: '10.png'}, {name: '眼鏡蛇', img: '1.png'},
+      {name: '弓箭', img: '2.png'}, {name: '彎刀', img: '3.png'}
+    ],
+    low: [
+      {name: '黃寶石', img: '4.png'}, {name: '紅寶石', img: '7.png'},
+      {name: '紫寶石', img: '5.png'}, {name: '藍寶石', img: '6.png'}, {name: '綠寶石', img: '8.png'}
+    ]
+  };
+  
+  // 赤三國資料庫
+  const dataSanguo = {
+    high: [
+      {name: '玉璽', img: 'image-removebg-preview (8).png'}, {name: '羽扇', img: 'image-removebg-preview (7).png'},
+      {name: '劍', img: 'image-removebg-preview (6).png'}, {name: '連弩', img: 'image-removebg-preview (4).png'}
+    ],
+    low: [
+      {name: '黃玉佩', img: 'image-removebg-preview (3).png'}, {name: '紅玉佩', img: 'image-removebg-preview (2).png'},
+      {name: '紫玉佩', img: 'image-removebg-preview (1).png'}, {name: '藍玉佩', img: 'image-removebg-preview.png'}, {name: '綠玉佩', img: 'image-removebg-preview (5).png'}
+    ]
+  };
+
+  if (gameName === "戰神賽特" || gameName === "戰神賽特2" || gameName === "赤三國") {
+    let pool = gameName === "赤三國" ? dataSanguo : dataZeus;
+
+    const numHigh = Math.random() > 0.5 ? 2 : 1;
+    let selectedHigh = [...pool.high].sort(() => 0.5 - Math.random()).slice(0, numHigh);
+    let selectedLow = pool.low[Math.floor(Math.random() * pool.low.length)];
+    
+    let valid = false;
+    let highCounts = [];
+    let lowCount = 0;
+    let total = 0;
+    
+    while (!valid) {
+      total = 0;
+      highCounts = [];
+      for(let i=0; i<numHigh; i++){
+        let c = Math.floor(Math.random() * 5) + 3;
+        highCounts.push(c);
+        total += c;
+      }
+      lowCount = Math.floor(Math.random() * 5) + 3;
+      total += lowCount;
+      if (total >= 10 && total <= 18) valid = true;
+    }
+
+    let symbolText = "";
+    for(let i=0; i<numHigh; i++){
+      symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedHigh[i].img}">『${selectedHigh[i].name}』<span class="symbol-count">x${highCounts[i]}</span></span>、`;
+    }
+    symbolText += `<span class="symbol-highlight"><img class="symbol-img" src="${selectedLow.img}">『${selectedLow.name}』<span class="symbol-count">x${lowCount}</span></span>`;
+
+    let extraText = "";
+    if (gameName === "戰神賽特2") {
+      let scatter = Math.random() > 0.5 ? {name: '聖甲蟲', img: '9.png'} : {name: '覺醒聖甲蟲', img: '11.png'};
+      extraText = `，且畫面閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="${scatter.img}">『${scatter.name}』</span> 聽牌跡象`;
+    } else if (gameName === "戰神賽特") {
+      extraText = `，且畫面連續閃過 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="9.png">『聖甲蟲』</span> 聽牌跡象`;
+    } else if (gameName === "赤三國") {
+      extraText = `，且畫面頻繁閃過 3 面 <span class="symbol-highlight" style="border-color:var(--danger);"><img class="symbol-img" src="image-removebg-preview (9).png">『龍王』</span> 聽牌準備進入 15 轉免遊`;
+    }
+
+    let tailText = gameName === "赤三國" ? "此時機台殺氣極重，為黃金買關突破點！" : "代表機台即將進入覺醒大爆發，強烈建議直接買入免遊！";
+
+    return `
+      <div class="buy-signal-box">
+        <div class="buy-signal-title">⚔️ VIP 黃金買免訊號</div>
+        當盤面上同時出現<br>${symbolText} <br><br>
+        (總計 <strong>${total}</strong> 個)${extraText}時，${tailText}
+      </div>
+    `;
+  } 
+  else if (gameName === "巴風特") {
+    let cascadeCount = Math.floor(Math.random() * 3) + 2; 
+    return `
+      <div class="buy-signal-box">
+        <div class="buy-signal-title">⚔️ VIP 黃金買免訊號</div>
+        如果連續 <strong style="color:var(--primary); font-size:18px;">${cascadeCount}</strong> 把引發連續消除，又出現 2 個 <span style="color:var(--primary); font-weight:bold;">『Scatter 印記』</span>，建議買入【一般免遊】；如果觸發 <span style="color:var(--danger); font-weight:bold;">『骷髏頭』</span> 訊號，建議您【提高下注量買一般免遊】或是【調低下注量買超級免遊】！
+      </div>
+    `;
+  }
+  return "";
+}
+
 async function openRoom(room, rate){
   // 檢查剩餘次數限制 (上限 5 次)
   if (currentTrialsLeft <= 0) {
@@ -723,6 +818,9 @@ async function openRoom(room, rate){
     });
 
     let featureCode = generateFeatureCode();
+    
+    // 生成動態買免遊訊號 HTML
+    let buySignalHtml = generateBuyFreeSignal(currentGame);
 
     document.getElementById("gamePage").innerHTML = `
       <div class='card'>
@@ -737,7 +835,10 @@ async function openRoom(room, rate){
             <td style="padding:12px; text-align:right; color:var(--success); font-weight:bold; letter-spacing: 1px; text-shadow: 0 0 8px rgba(0,230,118,0.4);">${featureCode}</td>
           </tr>
         </table>
-        <h3 style="color:var(--vip-gold); font-size: 16px;">🧠 綜合實戰操作建議 (已包含防吞噬演算)</h3>
+        
+        ${buySignalHtml}
+
+        <h3 style="color:var(--vip-gold); font-size: 16px; margin-top: 20px;">🧠 綜合實戰操作建議 (已包含防吞噬演算)</h3>
         <div class="strategy-box">${html}</div>
         <br>
         <button onclick="openGame('${currentGame}')" style="width:80%;">⬅ 返回房間列表</button>
