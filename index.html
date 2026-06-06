@@ -559,21 +559,38 @@ function loadGameList(){
   `;
 }
 
+// 🎯 動態生成房間號碼 (根據不同遊戲給予不同範圍，並統一四位數補零)
 function generateRooms(){
+  let maxRoomNum = 1000; // 預設
+  let padLen = 4; // 統一補 4 位數，因為戰神賽特2來到 3500
+
+  if (currentGame === "戰神賽特2") {
+    maxRoomNum = 3500;
+  } else if (currentGame === "戰神賽特") {
+    maxRoomNum = 2500;
+  } else if (currentGame === "巴風特") {
+    maxRoomNum = 1500;
+  } else if (currentGame === "赤三國") {
+    maxRoomNum = 1000;
+  }
+
   let rooms = [];
   const statusPool = ["活躍中", "蓄勢期", "平穩期", "觀察期"];
   let selectedRooms = [];
+  
   while(selectedRooms.length < 6) {
-    let rNum = Math.floor(Math.random() * 273) + 1;
-    let formatted = String(rNum).padStart(3, '0');
+    let rNum = Math.floor(Math.random() * maxRoomNum) + 1;
+    let formatted = String(rNum).padStart(padLen, '0');
     if(!selectedRooms.includes(formatted)) selectedRooms.push(formatted);
   }
+  
   for(let i = 0; i < 6; i++){ 
-    const rate = 30 + Math.floor(Math.random() * 60); 
+    const rate = 30 + Math.floor(Math.random() * 66); // 機率 30% 到 95%
     const volatility = rate > 75 ? "極高波動" : "平穩微波";
     const status = rate > 80 ? "🔥 爆發信號鎖定" : statusPool[i % statusPool.length];
     rooms.push({ room: selectedRooms[i], rate, volatility, status });
   }
+  
   rooms.sort((a, b) => b.rate - a.rate);
   let html = "<div class='grid'>";
   rooms.forEach((r, i) => {
@@ -727,7 +744,7 @@ const strategyPools = {
       "👑 VIP 買關預判：演算顯示，當盤面同時出現「玉璽」與「連弩」且發生消除，下一手直接買入免遊的連環計疊加最快。",
       "👑 VIP 獨家機密：系統已為您鎖定「烽火台」的高頻率波段。建議開啟 50 轉自動，耐心等待大面積連消觸發免遊。",
       "👑 VIP 專屬防吞噬：若 Wild 符號連續 5 把只出現在第 4 或第 5 軸（無法連線），機台正在嚴重調節庫存，請果斷換房。",
-      "👑 VIP 買關預判：當單把轉動中，消除次數達到 4 次且伴隨武將動畫，這是系統即將大吐分的暗號，強烈建議買關進場！",
+      "👑 VIP 買關預判：當單把轉動中，消除次數達到 4 次且伴隨武將動畫，這是系統即遇到大吐分的暗號，強烈建議買關進場！",
       "👑 VIP 獨家機密：VIP 專屬通道已過濾掉 70% 的無效低賠率亂數。請把握目前的「活躍期」，果斷採用階梯式加注法。",
       "👑 VIP 專屬防吞噬：連續 20 轉沒有觸發任何 Wild 符號，這代表赤三國進入了「空城計」冷盤，繼續打只會徒增耗損。",
       "👑 VIP 買關預判：攔截到底層特徵碼變化，若上一把的贏分恰好等於您的底注，這是一個極度隱蔽的買關突破點。",
