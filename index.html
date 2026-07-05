@@ -564,14 +564,15 @@ function generateRooms(){
   let maxRoomNum = 1000; // 預設
   let padLen = 4; // 統一補 4 位數，因為戰神賽特2來到 3500
 
+  // 新修改的遊戲房號生成範圍
   if (currentGame === "戰神賽特2") {
     maxRoomNum = 3500;
   } else if (currentGame === "戰神賽特") {
-    maxRoomNum = 2500;
+    maxRoomNum = 1300; // 戰神賽特修改為 1300
   } else if (currentGame === "巴風特") {
-    maxRoomNum = 1500;
+    maxRoomNum = 1000; // 巴風特修改為 1000
   } else if (currentGame === "赤三國") {
-    maxRoomNum = 1000;
+    maxRoomNum = 200;  // 赤三國修改為 200
   }
 
   let rooms = [];
